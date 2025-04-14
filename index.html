@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blasuz Maggie Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa; }
+        .category { margin-top: 30px; padding: 15px; background: #fff; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-item { margin: 10px 0; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item span { font-weight: 500; }
+        button { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #218838; }
+        #cart { margin-top: 30px; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #total { font-weight: bold; margin-top: 10px; }
+        #search { width: 100%; padding: 10px; margin-top: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Blasuz Maggie Cafe</h1>
+    <p>Hungry? Tap to Order</p>
+    <input type="text" id="search" placeholder="Search menu...">
+
+    <div id="menu"></div>
+
+    <div id="cart">
+        <h2>Your Cart</h2>
+        <ul id="cart-list"></ul>
+        <p id="total">Total: ₹0</p>
+
+        <label for="payment">Payment Method:</label>
+        <select id="payment">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+        </select>
+
+        <input type="hidden" id="tableNumber" value="">
+        <button onclick="submitOrder()">Submit Order</button>
+    </div>
+
+    <script>
+        const cart = [];
+        const menuData = `
+            <h2>Maggie</h2>
+            <ul>
+                <li>Classic Maggie - ₹40</li>
+                <li>Cheese Maggie - ₹50</li>
+                <li>Masala Maggie - ₹45</li>
+                <li>Paneer Maggie - ₹60</li>
+                <li>Egg Maggie - ₹55</li>
+                <li>Chicken Maggie - ₹70</li>
+            </ul>
+            <h2>Beverages</h2>
+            <ul>
+                <li>Lemon Tea - ₹20</li>
+                <li>Ginger Tea - ₹20</li>
+                <li>Boost - ₹25</li>
+                <li>Horlicks - ₹25</li>
+                <li>Badam Milk - ₹30</li>
+            </ul>
+        `;
+
+        const menuContainer = document.getElementById("menu");
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(menuData, 'text/html');
+
+        doc.body.querySelectorAll("h2, ul").forEach(el => {
+            if (el.tagName === "H2") {
+                const section = document.createElement("div");
+                section.className = "category";
+                section.innerHTML = `<h2>${el.textContent}</h2>`;
+                menuContainer.appendChild(section);
+            } else if (el.tagName === "UL") {
+                const lastSection = menuContainer.lastChild;
+                el.querySelectorAll("li").forEach(item => {
+                    const text = item.textContent;
+                    const match = text.match(/(.+?)\s*-\s*₹(\d+)/);
+                    if (match) {
+                        const name = match[1].trim();
+                        const price = parseInt(match[2]);
+                        const div = document.createElement("div");
+                        div.className = "menu-item";
+                        div.dataset.name = name;
+                        div.dataset.price = price;
+                        div.innerHTML = `<span>${name} - ₹${price}</span> <button onclick="addToCart('${name}', ${price})">Add</button>`;
+                        lastSection.appendChild(div);
+                    }
+                });
+            }
+        });
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCart();
+        }
+
+        function updateCart() {
+            const list = document.getElementById("cart-list");
+            list.innerHTML = "";
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price;
+                const li = document.createElement("li");
+                li.textContent = `${item.name} - ₹${item.price}`;
+                list.appendChild(li);
+            });
+            document.getElementById("total").textContent = `Total: ₹${total}`;
+        }
+
+        function submitOrder() {
+            const payment = document.getElementById("payment").value;
+            const table = document.getElementById("tableNumber").value || "Unknown";
+            let message = `🧾 *New Order*\n\n`;
+            cart.forEach(item => {
+                message += `• ${item.name} - ₹${item.price}\n`;
+            });
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+            message += `\n💰 Total: ₹${total}\n📍 Table: ${table}\n💳 Payment: ${payment}`;
+
+            const whatsappLink = `https://wa.me/919360296867?text=${encodeURIComponent(message)}`;
+            window.open(whatsappLink, '_blank');
+        }
+
+        document.getElementById("search").addEventListener("input", function() {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll(".menu-item").forEach(item => {
+                item.style.display = item.dataset.name.toLowerCase().includes(term) ? "flex" : "none";
+            });
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableNum = urlParams.get('table');
+        if (tableNum) document.getElementById("tableNumber").value = tableNum;
+    </script>
+</body>
+</html>
